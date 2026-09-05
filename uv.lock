@@ -1,0 +1,24 @@
+version = 1
+revision = 3
+requires-python = ">=3.12"
+
+[[package]]
+name = "ac-challenge-suite-clientpatch"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "libmpq" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "libmpq", specifier = ">=0.6.1" }]
+
+[[package]]
+name = "libmpq"
+version = "0.6.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/45/ca/783581c9b4faf9ef751aa676b055ef1d766f78d95e9b6ad005465cc68cf4/libmpq-0.6.1.tar.gz", hash = "sha256:50492cda2833c6b837b5b875d0383e710ade8b98f5783c4a6c497ae82970edcc", size = 90516, upload-time = "2026-09-02T21:15:58.857Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b1/64/1c682dc805ddd1ec53fe2a59ae7b938733a829699c2f247be56760fdcbf2/libmpq-0.6.1-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:ec781996bfc1cdd54d549a19072bc8a49715dbec62ece2124f81fe39e020eeb8", size = 93043, upload-time = "2026-09-02T21:15:55.965Z" },
+    { url = "https://files.pythonhosted.org/packages/57/e6/0e885ee696fda469d544708ad20fef9d3da677c3125546623e9e7db1c84d/libmpq-0.6.1-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:e8d42a4e747a5ecdd6ea985c71cebe0e86f8bcbd40b8f3446cc9b6192335ae06", size = 93933, upload-time = "2026-09-02T21:15:57.43Z" },
+]
