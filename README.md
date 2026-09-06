@@ -14,7 +14,13 @@ This entire pipeline is Python, managed with [uv](https://docs.astral.sh/uv/). P
 
 ## Build
 
-1. Extract your own client's `Spell.dbc` (from `DBFilesClient\Spell.dbc` inside `common.MPQ`/`common-2.MPQ`, using any MPQ tool you already have) into `input/DBFilesClient/Spell.dbc`.
+1. Extract your own client's `Spell.dbc` (from `DBFilesClient\Spell.dbc` inside `common.MPQ` or `common-2.MPQ`, in your WoW install's `Data/` folder) into `input/DBFilesClient/Spell.dbc`:
+
+   ```
+   uv run tools/extract_mpq.py /path/to/Data/common.MPQ "DBFilesClient\Spell.dbc" input/DBFilesClient/Spell.dbc
+   ```
+
+   If it's not in `common.MPQ`, try `common-2.MPQ` the same way. Any other MPQ tool you already have works too — this is just provided so the whole pipeline stays self-contained.
 
 2. Patch it:
 
@@ -38,4 +44,4 @@ Copy `dist/patch-Z.mpq` into the client's `Data/` folder, next to `patch-2.MPQ`/
 
 `tools/patch_dbc.py` is idempotent — running it again (even against an already-patched file) replaces the two rows rather than duplicating them, so re-running the pipeline after updating your input DBC is safe. It validates the input file's record layout (234 fields / 936 bytes per record, matching build 12340) and fails loudly rather than silently corrupting a mismatched client version.
 
-`tools/pack_mpq.py`'s output was cross-checked during development against an independent MPQ implementation (StormLib) in both raw and ZLIB-compressed modes — both round-tripped byte-for-byte identical to the original input file, confirming the archives it produces are standards-compliant and not just self-consistent with `libmpq`.
+`tools/pack_mpq.py`'s output was cross-checked during development against an independent MPQ implementation (StormLib) in both raw and ZLIB-compressed modes — both round-tripped byte-for-byte identical to the original input file, confirming the archives it produces are standards-compliant and not just self-consistent with `libmpq`. `tools/extract_mpq.py` was verified the same way: packing a real `Spell.dbc` and extracting it back out reproduces it byte-for-byte.
