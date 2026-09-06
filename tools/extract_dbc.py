@@ -83,6 +83,11 @@ def main() -> int:
     output_file = Path(sys.argv[3])
     locale = sys.argv[4] if len(sys.argv) == 5 else "enUS"
 
+    if output_file.is_dir():
+        print(f"error: output path already exists as a directory: {output_file}", file=sys.stderr)
+        print("(pass a file path, not a directory, as the third argument)", file=sys.stderr)
+        return 1
+
     locale_dir = data_dir / locale
     if not locale_dir.is_dir():
         print(f"error: locale directory does not exist: {locale_dir}", file=sys.stderr)
