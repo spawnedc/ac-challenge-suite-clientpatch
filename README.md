@@ -12,15 +12,21 @@ This patch only touches `Spell.dbc`. The two custom spells reuse existing, alrea
 
 This entire pipeline is Python, managed with [uv](https://docs.astral.sh/uv/). Packing uses [libmpq](https://pypi.org/project/libmpq/), a ctypes binding that ships prebuilt native libraries for its supported platforms (Linux/macOS via manylinux/musllinux wheels) — no local C/C++ toolchain needed. `uv sync` (or any `uv run`) fetches it automatically.
 
+## Existing client patches matter
+
+MPQ patching is whole-file override by load priority, not a per-row merge: the client loads `common.MPQ` → `common-2.MPQ` → `expansion.MPQ` → `lichking.MPQ` → `patch.MPQ` → `patch-2.MPQ` → `patch-3.MPQ` (then locale-specific equivalents), and whichever archive contains a given internal path *last* wins **entirely** for that file. If Blizzard's `patch-2.MPQ`/`patch-3.MPQ` ship their own updated `Spell.dbc` (likely, since spell data changed throughout 3.3.5a's patch cycle), extracting from `common.MPQ` alone would give a stale, pre-patch file — and since our own patch loads after all of these (that's the point of the `patch-Z` naming), patching that stale version would silently regress every official spell change, not just fail to add our two rows.
+
+`tools/extract_dbc.py` (below) resolves this correctly using the real MPQ patch-archive mechanism via the bundled `bin/MPQExtractor` (a StormLib-based tool), rather than picking a single archive by hand.
+
 ## Build
 
-1. Extract your own client's `Spell.dbc` (from `DBFilesClient\Spell.dbc` inside `common.MPQ` or `common-2.MPQ`, in your WoW install's `Data/` folder) into `input/DBFilesClient/Spell.dbc`:
+1. Extract your own client's `Spell.dbc`, correctly layering its official patches, using the bundled `bin/MPQExtractor`:
 
    ```
-   uv run tools/extract_mpq.py /path/to/Data/common.MPQ "DBFilesClient\Spell.dbc" input/DBFilesClient/Spell.dbc
+   uv run tools/extract_dbc.py /path/to/Data "DBFilesClient\Spell.dbc" input/DBFilesClient
    ```
 
-   If it's not in `common.MPQ`, try `common-2.MPQ` the same way. Any other MPQ tool you already have works too — this is just provided so the whole pipeline stays self-contained.
+   This finds `common.MPQ`/`common-2.MPQ` as the base archive and every official `patch.MPQ`/`patch-<N>.MPQ` in that same directory (in the correct priority order — numerically, not by filesystem listing order), and applies them all before extracting. It deliberately ignores locale-specific patches (`patch-<locale>*.MPQ`) and custom/letter-suffixed ones like a previously-installed `patch-A.MPQ` — only official numbered patches feed into this step.
 
 2. Patch it:
 
@@ -44,4 +50,6 @@ Copy `dist/patch-Z.mpq` into the client's `Data/` folder, next to `patch-2.MPQ`/
 
 `tools/patch_dbc.py` is idempotent — running it again (even against an already-patched file) replaces the two rows rather than duplicating them, so re-running the pipeline after updating your input DBC is safe. It validates the input file's record layout (234 fields / 936 bytes per record, matching build 12340) and fails loudly rather than silently corrupting a mismatched client version.
 
-`tools/pack_mpq.py`'s output was cross-checked during development against an independent MPQ implementation (StormLib) in both raw and ZLIB-compressed modes — both round-tripped byte-for-byte identical to the original input file, confirming the archives it produces are standards-compliant and not just self-consistent with `libmpq`. `tools/extract_mpq.py` was verified the same way: packing a real `Spell.dbc` and extracting it back out reproduces it byte-for-byte.
+`tools/pack_mpq.py`'s output was cross-checked during development against an independent MPQ implementation (StormLib, the same one `bin/MPQExtractor` is built on) in both raw and ZLIB-compressed modes — both round-tripped byte-for-byte identical to the original input file, confirming the archives it produces are standards-compliant and not just self-consistent with `libmpq`.
+
+`tools/extract_dbc.py`'s patch-priority resolution was verified by packing three synthetic archives (a base + two "patches") each containing distinct content at the same internal path, then confirming the highest-priority one wins after layering — the same real patch-chain mechanism used against actual client data. What could **not** be verified here is the exact behavior against real retail `patch-2.MPQ`/`patch-3.MPQ` files (this environment doesn't have them) — if `MPQExtractor` reports something unexpected (e.g. needing a `--prefix`), check its `--help` output; that's a StormLib patch-archive concept this script doesn't currently pass through.
