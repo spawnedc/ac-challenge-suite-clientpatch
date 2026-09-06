@@ -1,0 +1,6 @@
+/build/
+/dist/
+/input/*
+!/input/.gitkeep
+.venv/
+__pycache__/

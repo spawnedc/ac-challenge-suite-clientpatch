@@ -1,0 +1,11 @@
+[project]
+name = "ac-challenge-suite-clientpatch"
+version = "0.1.0"
+description = "Client-side DBC/icon patch build pipeline for mod-challenge-suite"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["libmpq>=0.6.1"]
+
+[tool.uv]
+package = false
+
